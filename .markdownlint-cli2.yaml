@@ -1,0 +1,6 @@
+config:
+  line-length: false
+  no-inline-html: false
+  first-line-heading: false
+ignores:
+  - node_modules

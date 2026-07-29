@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Local, private Home Assistant test mappings — NEVER commit real entity IDs.
+# Any file matching these patterns stays local only.
+*.local.yaml
+*.local.yml
+*.local.json
+local-*.yaml
+local-*.yml
+home-assistant.local.yaml
+mapping.local.*
+secrets*.yaml
+
+# Debug / scratch output
+debug/
+*.debug
+*.log
+mcp-dump*.json
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

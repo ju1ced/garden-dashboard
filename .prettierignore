@@ -1,0 +1,5 @@
+node_modules/
+*.local.yaml
+*.local.yml
+*.local.json
+LICENSE
