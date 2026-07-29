@@ -11,6 +11,8 @@ const {
   batteryLow,
   linkLow,
   actionServiceFor,
+  parseObjectState,
+  humanizeKey,
   shouldConfirm,
   collectEntityIds,
   hasRelevantChange,
@@ -111,6 +113,37 @@ test("actionServiceFor rejects unsupported / missing entities", () => {
   assert.equal(actionServiceFor("button.x", "stop"), null);
   assert.equal(actionServiceFor(undefined, "start"), null);
   assert.equal(actionServiceFor("notanentity", "start"), null);
+});
+
+test("parseObjectState parses Python-repr and JSON dict states", () => {
+  const py =
+    "{'fail_safe': 0, 'irrigation_amount_unit': 'liter', 'irrigation_mode': 'duration_with_interval', 'irrigation_total_duration': 2}";
+  assert.deepEqual(parseObjectState(py), {
+    fail_safe: 0,
+    irrigation_amount_unit: "liter",
+    irrigation_mode: "duration_with_interval",
+    irrigation_total_duration: 2,
+  });
+  assert.deepEqual(parseObjectState('{"a": 1, "b": true, "c": null}'), {
+    a: 1,
+    b: true,
+    c: null,
+  });
+});
+
+test("parseObjectState returns null for non-object / unusable states", () => {
+  assert.equal(parseObjectState("5"), null);
+  assert.equal(parseObjectState("normal"), null);
+  assert.equal(parseObjectState("unavailable"), null);
+  assert.equal(parseObjectState(""), null);
+  assert.equal(parseObjectState("[1, 2, 3]"), null);
+  assert.equal(parseObjectState("{not valid"), null);
+});
+
+test("humanizeKey formats snake_case labels", () => {
+  assert.equal(humanizeKey("irrigation_mode"), "Irrigation mode");
+  assert.equal(humanizeKey("fail_safe"), "Fail safe");
+  assert.equal(humanizeKey(""), "");
 });
 
 test("shouldConfirm defaults to true, disabled only by explicit false", () => {

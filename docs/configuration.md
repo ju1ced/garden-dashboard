@@ -105,19 +105,20 @@ irrigation:
 
 ### Irrigation fields
 
-| Field                  | Required | Description                                                            |
-| ---------------------- | -------- | ---------------------------------------------------------------------- |
-| `name`                 | no       | Card heading.                                                          |
-| `icon`                 | no       | MDI icon (default `mdi:water`).                                        |
-| `entities.valve`       | no\*     | On/off entity that runs the water. Drives Start/Stop + active state.   |
-| `entities.duration`    | no       | A `number.*` entity — shown as a slider that calls `number.set_value`. |
-| `entities.remaining`   | no       | Live / remaining irrigation duration sensor.                           |
-| `entities.last_run`    | no       | Last watering timestamp/sensor.                                        |
-| `entities.status`      | no       | Programme / schedule status sensor.                                    |
-| `entities.error`       | no       | Fault / valve-abnormal state sensor.                                   |
-| `entities.volume`      | no       | Water usage sensor.                                                    |
-| `entities.battery`     | no       | Battery % sensor.                                                      |
-| `entities.linkquality` | no       | Zigbee link quality sensor.                                            |
+| Field                  | Required | Description                                                                                                          |
+| ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | no       | Card heading.                                                                                                        |
+| `icon`                 | no       | MDI icon (default `mdi:water`).                                                                                      |
+| `entities.valve`       | no\*     | On/off entity that runs the water. Drives Start/Stop + active state.                                                 |
+| `entities.duration`    | no       | A `number.*` entity — shown as a slider that calls `number.set_value`.                                               |
+| `entities.remaining`   | no       | Live / remaining irrigation duration sensor.                                                                         |
+| `entities.last_run`    | no       | Last watering timestamp/sensor.                                                                                      |
+| `entities.status`      | no       | Programme / schedule status sensor.                                                                                  |
+| `entities.error`       | no       | Fault / valve-abnormal state sensor.                                                                                 |
+| `entities.volume`      | no       | Water usage sensor. Map a real-time volume sensor to see it move live.                                               |
+| `entities.settings`    | no       | A sensor whose state is a dict/JSON object (e.g. "manual default settings"); rendered as a readable key/value block. |
+| `entities.battery`     | no       | Battery % sensor.                                                                                                    |
+| `entities.linkquality` | no       | Zigbee link quality sensor.                                                                                          |
 
 \* Without a `valve` entity the Start/Stop buttons are disabled and the
 device is flagged in diagnostics.

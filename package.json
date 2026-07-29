@@ -1,6 +1,6 @@
 {
   "name": "garden-dashboard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Home Assistant Lovelace custom card for soil sensors and automatic irrigation.",
   "type": "commonjs",

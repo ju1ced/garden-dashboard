@@ -73,6 +73,36 @@ function linkLow(value, threshold = 20) {
 }
 
 /**
+ * Parse a dict/JSON-like state string into a plain flat object, or null.
+ * Accepts both JSON and Python-repr style (single quotes, True/False/None),
+ * e.g. `{'irrigation_mode': 'duration', 'fail_safe': 0}`.
+ */
+function parseObjectState(state) {
+  if (isUnavailable(state)) return null;
+  const text = String(state).trim();
+  if (!text.startsWith("{") || !text.endsWith("}")) return null;
+  const jsonish = text
+    .replace(/'/g, '"')
+    .replace(/\bTrue\b/g, "true")
+    .replace(/\bFalse\b/g, "false")
+    .replace(/\bNone\b/g, "null");
+  try {
+    const parsed = JSON.parse(jsonish);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Turn a snake_case key into a readable label ("irrigation_mode" → "Irrigation mode"). */
+function humanizeKey(key) {
+  const spaced = String(key).replace(/_/g, " ").trim();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : spaced;
+}
+
+/**
  * Resolve the correct service for a watering action based on the entity's
  * real domain. Returns { domain, service } or null when unsupported.
  * `action` is "start" or "stop".
@@ -702,6 +732,8 @@ class GardenDashboardCard extends CardBase {
                value="${parseNumeric(durationObj?.state) ?? 0}"></div>`
         : "";
 
+    const settingsBlock = this._renderSettings(e.settings, "Instellingen");
+
     return `
       <article class="device-card status-${statusKey}">
         <header class="device-head" data-info="${escapeHtml(e.valve || "")}">
@@ -711,6 +743,7 @@ class GardenDashboardCard extends CardBase {
         </header>
         ${hasError ? `<div class="device-error"><ha-icon icon="mdi:alert"></ha-icon> Foutstatus: ${escapeHtml(errorObj.state)}</div>` : ""}
         ${rows ? `<div class="metric-list">${rows}</div>` : ""}
+        ${settingsBlock}
         ${durationControl}
         <div class="device-actions">
           <button class="btn start" data-water-start="${index}" ${unavailable ? "disabled" : ""}>
@@ -721,6 +754,29 @@ class GardenDashboardCard extends CardBase {
           </button>
         </div>
       </article>`;
+  }
+
+  /**
+   * Render a dict/JSON-valued entity (e.g. "manual default settings") as a
+   * readable key/value block. Falls back to the raw wrapped text when the
+   * state is not object-like; renders nothing when missing/unavailable.
+   */
+  _renderSettings(entityId, title) {
+    if (!entityId) return "";
+    const obj = this._obj(entityId);
+    if (!obj || isUnavailable(obj.state)) return "";
+    const info = `data-info="${escapeHtml(entityId)}"`;
+    const parsed = parseObjectState(obj.state);
+    if (!parsed) {
+      return `<div class="settings" ${info}><div class="settings-title">${escapeHtml(title)}</div><div class="settings-raw">${escapeHtml(obj.state)}</div></div>`;
+    }
+    const rows = Object.entries(parsed)
+      .map(
+        ([key, value]) =>
+          `<div class="settings-row"><span>${escapeHtml(humanizeKey(key))}</span><strong>${escapeHtml(value)}</strong></div>`,
+      )
+      .join("");
+    return `<div class="settings" ${info}><div class="settings-title">${escapeHtml(title)}</div>${rows}</div>`;
   }
 
   _renderDiagnostics(summary) {
@@ -934,6 +990,15 @@ class GardenDashboardCard extends CardBase {
       .device-error { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px;
         background:color-mix(in srgb, var(--g-warn) 18%, transparent); color:var(--g-warn); font-size:13px; font-weight:600; }
       .device-error ha-icon { color:var(--g-warn); }
+      .settings { border:1px solid var(--g-line); border-radius:10px; padding:8px 10px;
+        background:color-mix(in srgb, var(--g-bg) 55%, transparent); cursor:pointer; }
+      .settings-title { font-size:12px; text-transform:uppercase; letter-spacing:.04em;
+        color:var(--g-muted); margin-bottom:4px; }
+      .settings-row { display:flex; justify-content:space-between; gap:12px; padding:3px 0;
+        font-size:13px; border-top:1px solid color-mix(in srgb, var(--g-line) 55%, transparent); }
+      .settings-row:first-of-type { border-top:0; }
+      .settings-row span { color:var(--g-muted); }
+      .settings-raw { font-size:12px; color:var(--g-muted); word-break:break-word; line-height:1.4; }
       .duration { display:flex; flex-direction:column; gap:4px; }
       .duration label { font-size:12px; color:var(--g-muted); }
       .duration input { width:100%; accent-color:var(--g-accent); }
@@ -1085,6 +1150,8 @@ if (typeof module !== "undefined" && module.exports) {
     batteryLow,
     linkLow,
     actionServiceFor,
+    parseObjectState,
+    humanizeKey,
     shouldConfirm,
     collectEntityIds,
     hasRelevantChange,

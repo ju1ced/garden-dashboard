@@ -74,7 +74,7 @@ test("render does not crash on missing / unknown / unavailable entities", () => 
         name: "Systeem",
         entities: {
           valve: "switch.unavailable_valve",
-          status: "sensor.dict_status",
+          settings: "sensor.dict_status",
           battery: "sensor.unavailable_batt",
         },
       },
@@ -89,9 +89,9 @@ test("render does not crash on missing / unknown / unavailable entities", () => 
   assert.ok(card.shadowRoot.innerHTML.includes("Gemengd"));
   // unavailable metric surfaces the friendly label, not a crash
   assert.ok(card.shadowRoot.innerHTML.includes("Niet beschikbaar"));
-  // the long dict state is truncated (ellipsis present, full blob absent)
-  assert.ok(card.shadowRoot.innerHTML.includes("…"));
-  assert.ok(!card.shadowRoot.innerHTML.includes("irrigation_mode"));
+  // the dict-valued settings entity renders as a readable key/value block
+  assert.ok(card.shadowRoot.innerHTML.includes("Instellingen"));
+  assert.ok(card.shadowRoot.innerHTML.includes("Irrigation mode"));
 });
 
 test("render works with an empty config", () => {
