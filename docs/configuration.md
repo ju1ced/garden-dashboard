@@ -105,23 +105,65 @@ irrigation:
 
 ### Irrigation fields
 
-| Field                  | Required | Description                                                                                                          |
-| ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | no       | Card heading.                                                                                                        |
-| `icon`                 | no       | MDI icon (default `mdi:water`).                                                                                      |
-| `entities.valve`       | no\*     | On/off entity that runs the water. Drives Start/Stop + active state.                                                 |
-| `entities.duration`    | no       | A `number.*` entity — shown as a slider that calls `number.set_value`.                                               |
-| `entities.remaining`   | no       | Live / remaining irrigation duration sensor.                                                                         |
-| `entities.last_run`    | no       | Last watering timestamp/sensor.                                                                                      |
-| `entities.status`      | no       | Programme / schedule status sensor.                                                                                  |
-| `entities.error`       | no       | Fault / valve-abnormal state sensor.                                                                                 |
-| `entities.volume`      | no       | Water usage sensor. Map a real-time volume sensor to see it move live.                                               |
-| `entities.settings`    | no       | A sensor whose state is a dict/JSON object (e.g. "manual default settings"); rendered as a readable key/value block. |
-| `entities.battery`     | no       | Battery % sensor.                                                                                                    |
-| `entities.linkquality` | no       | Zigbee link quality sensor.                                                                                          |
+| Field                  | Required | Description                                                                                                                                                                                        |
+| ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | no       | Card heading.                                                                                                                                                                                      |
+| `icon`                 | no       | MDI icon (default `mdi:water`).                                                                                                                                                                    |
+| `entities.valve`       | no\*     | On/off entity that runs the water. Drives Start/Stop + active state.                                                                                                                               |
+| `entities.duration`    | no       | A `number.*` or `input_number.*` entity — shown as a slider that calls `<domain>.set_value`. Use an `input_number` (bridged by an automation) for devices that only accept the duration over MQTT. |
+| `entities.remaining`   | no       | Live / remaining irrigation duration sensor.                                                                                                                                                       |
+| `entities.last_run`    | no       | Last watering timestamp/sensor.                                                                                                                                                                    |
+| `entities.status`      | no       | Programme / schedule status sensor.                                                                                                                                                                |
+| `entities.error`       | no       | Fault / valve-abnormal state sensor.                                                                                                                                                               |
+| `entities.volume`      | no       | Water usage sensor. Map a real-time volume sensor to see it move live.                                                                                                                             |
+| `entities.settings`    | no       | A sensor whose state is a dict/JSON object (e.g. "manual default settings"); rendered as a readable key/value block.                                                                               |
+| `entities.battery`     | no       | Battery % sensor.                                                                                                                                                                                  |
+| `entities.linkquality` | no       | Zigbee link quality sensor.                                                                                                                                                                        |
 
 \* Without a `valve` entity the Start/Stop buttons are disabled and the
 device is flagged in diagnostics.
+
+### Setting a duration that only exists over MQTT
+
+Some Zigbee2MQTT valves (e.g. Sonoff) expose the manual watering duration only
+as a writable MQTT property — there is no `number.*` entity to bind a slider
+to. Bridge it with an `input_number` helper plus a tiny automation, then map
+the helper to `entities.duration`:
+
+1. Create an `input_number` helper (Settings → Devices & Services → Helpers),
+   e.g. range 1–10, unit `min`.
+2. Add an automation that publishes the value on change (generic example):
+
+   ```yaml
+   alias: Watering duration to Zigbee2MQTT
+   triggers:
+     - trigger: state
+       entity_id: input_number.example_manual_duration
+       not_from: ["unknown", "unavailable"]
+   conditions:
+     - condition: numeric_state
+       entity_id: input_number.example_manual_duration
+       above: 0
+   actions:
+     - action: mqtt.publish
+       data:
+         topic: "zigbee2mqtt/EXAMPLE_VALVE/set"
+         payload: '{"manual_irrigation_duration": {{ trigger.to_state.state | int }}}'
+   mode: restart
+   ```
+
+3. Point the card at the helper:
+
+   ```yaml
+   irrigation:
+     - name: Moestuin
+       entities:
+         valve: switch.example_watering
+         duration: input_number.example_manual_duration
+   ```
+
+The card renders the helper as a "Duur instellen" slider; moving it writes the
+helper, the automation publishes the MQTT `set`, and the valve updates.
 
 ### Which service is called
 

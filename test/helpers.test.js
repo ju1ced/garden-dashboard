@@ -11,6 +11,7 @@ const {
   batteryLow,
   linkLow,
   actionServiceFor,
+  durationControlDomain,
   parseObjectState,
   humanizeKey,
   shouldConfirm,
@@ -113,6 +114,18 @@ test("actionServiceFor rejects unsupported / missing entities", () => {
   assert.equal(actionServiceFor("button.x", "stop"), null);
   assert.equal(actionServiceFor(undefined, "start"), null);
   assert.equal(actionServiceFor("notanentity", "start"), null);
+});
+
+test("durationControlDomain accepts number and input_number only", () => {
+  assert.equal(durationControlDomain("number.watering_duration"), "number");
+  assert.equal(
+    durationControlDomain("input_number.manual_duration"),
+    "input_number",
+  );
+  assert.equal(durationControlDomain("sensor.watering_duration"), null);
+  assert.equal(durationControlDomain("switch.valve"), null);
+  assert.equal(durationControlDomain(undefined), null);
+  assert.equal(durationControlDomain("notanentity"), null);
 });
 
 test("parseObjectState parses Python-repr and JSON dict states", () => {
