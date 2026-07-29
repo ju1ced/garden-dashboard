@@ -96,6 +96,16 @@ function parseObjectState(state) {
   }
 }
 
+/**
+ * The domain that can be written with `<domain>.set_value` for a duration
+ * control, or null when the entity is not a settable numeric entity.
+ */
+function durationControlDomain(entityId) {
+  if (typeof entityId !== "string") return null;
+  const domain = entityId.split(".")[0];
+  return domain === "number" || domain === "input_number" ? domain : null;
+}
+
 /** Turn a snake_case key into a readable label ("irrigation_mode" → "Irrigation mode"). */
 function humanizeKey(key) {
   const spaced = String(key).replace(/_/g, " ").trim();
@@ -455,12 +465,15 @@ class GardenDashboardCard extends CardBase {
   async _setDuration(deviceIndex, value) {
     const device = this._config?.irrigation?.[deviceIndex];
     const entityId = device?.entities?.duration;
-    if (!entityId || !entityId.startsWith("number.")) {
-      this._notify("Duur kan niet worden ingesteld (geen number-entity).");
+    const domain = durationControlDomain(entityId);
+    if (!domain) {
+      this._notify(
+        "Duur kan niet worden ingesteld (geen number/input_number-entity).",
+      );
       return;
     }
     try {
-      await this._hass.callService("number", "set_value", {
+      await this._hass.callService(domain, "set_value", {
         entity_id: entityId,
         value: Number(value),
       });
@@ -722,15 +735,16 @@ class GardenDashboardCard extends CardBase {
       .join("");
 
     const durationObj = this._obj(e.duration);
-    const durationControl =
-      e.duration && String(e.duration).startsWith("number.")
-        ? `<div class="duration"><label>Duur instellen</label>
+    const durationValue = parseNumeric(durationObj?.state);
+    const durationUnit = durationObj?.attributes?.unit_of_measurement || "";
+    const durationControl = durationControlDomain(e.duration)
+      ? `<div class="duration"><label>Duur instellen${durationValue !== null ? ` — ${durationValue}${durationUnit ? ` ${escapeHtml(durationUnit)}` : ""}` : ""}</label>
              <input type="range" data-duration="${index}"
                min="${durationObj?.attributes?.min ?? 0}"
                max="${durationObj?.attributes?.max ?? 60}"
                step="${durationObj?.attributes?.step ?? 1}"
-               value="${parseNumeric(durationObj?.state) ?? 0}"></div>`
-        : "";
+               value="${durationValue ?? 0}"></div>`
+      : "";
 
     const settingsBlock = this._renderSettings(e.settings, "Instellingen");
 
@@ -1150,6 +1164,7 @@ if (typeof module !== "undefined" && module.exports) {
     batteryLow,
     linkLow,
     actionServiceFor,
+    durationControlDomain,
     parseObjectState,
     humanizeKey,
     shouldConfirm,
