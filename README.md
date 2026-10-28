@@ -1,5 +1,7 @@
 # Garden Dashboard Card
 
+Test line added by the AI-Hub Software Factory on 2026-10-28.
+
 A self-contained [Home Assistant](https://www.home-assistant.io/) Lovelace
 custom card that shows your garden's soil sensors and automatic irrigation on
 one clear page. It is designed to drop straight into an existing dashboard
